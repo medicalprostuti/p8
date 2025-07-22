@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিচের কোনটি ভেক্টরের বিনিময় সূত্র?",
+          options: {
+            A: "P(Q + R) = PQ + PR",
+            B: "P + Q = Q + P",
+            C: "(P + Q) + R = P + (Q + R)",
+            D: "P + Q = P",
+          },
+          correct: "B",
+          explanation:
+            "<p>ভেক্টর যোগের বিনিময় সূত্র (Commutative Law of Vector Addition) অনুযায়ী, দুটি ভেক্টরের যোগফল তাদের যোগের ক্রমের উপর নির্ভরশীল নয়। অর্থাৎ, P ও Q দুটি ভেক্টর হলে, P + Q = Q + P হবে।</p><ul><li>A) P(Q + R) = PQ + PR: এটি ভেক্টরের বন্টন সূত্র (Distributive Law) বা স্কেলার গুণনের বন্টন সূত্র।</li><li>B) P + Q = Q + P: এটি সঠিক। এটি ভেক্টর যোগের বিনিময় সূত্র।</li><li>C) (P + Q) + R = P + (Q + R): এটি ভেক্টর যোগের সংযোজন সূত্র (Associative Law)।</li><li>D) P + Q = P: এটি ভুল। এটি তখনই সম্ভব যখন Q একটি শূন্য ভেক্টর হয়।</li></ul>",
+        },
+        {
+          id: 2,
+          question:
+            "P, Q ও R মানের তিনটি ভেক্টর একটি ত্রিভুজের তিনটি বাহু দ্বারা একই ক্রমে নির্দেশিত হলে নিচের কোনটি সঠিক?",
+          options: {
+            A: "P + Q - R = 0",
+            B: "P - Q - R = 0",
+            C: "P - Q + R = 0",
+            D: "P + Q + R = 0",
+          },
+          correct: "D",
+          explanation:
+            "<p>ভেক্টর যোগের ত্রিভুজ সূত্র (Triangle Law of Vector Addition) অনুযায়ী, যদি দুটি ভেক্টরকে একটি ত্রিভুজের দুটি বাহু দ্বারা একই ক্রমে নির্দেশ করা হয়, তাহলে তৃতীয় বাহুটি বিপরীত ক্রমে তাদের লব্ধি নির্দেশ করে।</p><p>যখন তিনটি ভেক্টর একটি ত্রিভুজের তিনটি বাহু দ্বারা একই ক্রমে (অর্থাৎ, একটির শেষবিন্দু থেকে পরেরটির শুরু) নির্দেশিত হয়, তখন তাদের লব্ধি শূন্য হয়। এর কারণ হলো, প্রথম ভেক্টরের আদিবিন্দু থেকে শুরু করে শেষ ভেক্টরের শেষবিন্দুতে পৌঁছালে আবার প্রথম ভেক্টরের আদিবিন্দুতেই ফিরে আসা হয়, যা নিট সরণ শূন্য নির্দেশ করে।</p><ul><li>A) P + Q - R = 0: এটি ভুল।</li><li>B) P - Q - R = 0: এটি ভুল।</li><li>C) P - Q + R = 0: এটি ভুল।</li><li>D) P + Q + R = 0: এটি সঠিক। তিনটি ভেক্টর যদি একই ক্রমে একটি বদ্ধ ত্রিভুজ তৈরি করে, তাহলে তাদের লব্ধি শূন্য হয়।</li></ul>",
+        },
+        {
+          id: 3,
+          question:
+            "যদি দুটি সমান ভেক্টরের লব্ধি এদের যে-কোনো একটির সমান হয় তবে ভেক্টরদ্বয়ের মধ্যবর্তী কোণ হবে&mdash;",
+          options: {
+            A: "0&deg;",
+            B: "180&deg;",
+            C: "90&deg;",
+            D: "120&deg;",
+          },
+          correct: "D",
+          explanation:
+            "<p>দুটি ভেক্টরের লব্ধির মান নির্ণয়ের সূত্র হলো:<br>R = &radic;(P&sup2; + Q&sup2; + 2PQ cos&theta;)<br>যেখানে, P এবং Q হলো ভেক্টরদ্বয়ের মান, R হলো লব্ধির মান, এবং &theta; হলো ভেক্টরদ্বয়ের মধ্যবর্তী কোণ।</p><p>প্রশ্নে দেওয়া আছে:<br>P = Q (দুটি সমান ভেক্টর)<br>R = P (লব্ধি তাদের যে-কোনো একটির সমান)<br><br>সুতরাং, P = &radic;(P&sup2; + P&sup2; + 2P &times; P cos&theta;)<br>P = &radic;(2P&sup2; + 2P&sup2; cos&theta;)<br><br>উভয় পক্ষকে বর্গ করে পাই:<br>P&sup2; = 2P&sup2; + 2P&sup2; cos&theta;<br>P&sup2; = 2P&sup2;(1 + cos&theta;)<br><br>P&sup2; দিয়ে ভাগ করে (যেহেতু P &ne; 0):<br>1 = 2(1 + cos&theta;)<br>1/2 = 1 + cos&theta;<br>cos&theta; = 1/2 - 1<br>cos&theta; = -1/2<br><br>যেহেতু cos&theta; = -1/2, তাই &theta; = 120&deg;।</p><p>অতএব, ভেক্টরদ্বয়ের মধ্যবর্তী কোণ হবে 120&deg;।</p><ul><li>A) 0&deg;: তখন লব্ধি 2P হবে।</li><li>B) 180&deg;: তখন লব্ধি 0 হবে।</li><li>C) 90&deg;: তখন লব্ধি &radic;(P&sup2; + P&sup2;) = &radic;(2P&sup2;) = P&radic;2 হবে।</li><li>D) 120&deg;: এটি সঠিক।</li></ul>",
+        },
+        {
+          id: 4,
+          question:
+            "দুটি সমান ভেক্টর থেকে শূন্য ভেক্টর পেতে হলে এদের মধ্যবর্তী কোণ হবে&mdash;",
+          options: {
+            A: "0&deg;",
+            B: "45&deg;",
+            C: "90&deg;",
+            D: "180&deg;",
+          },
+          correct: "D",
+          explanation:
+            "<p>দুটি ভেক্টরের লব্ধির মান নির্ণয়ের সূত্র হলো:<br>R = &radic;(P&sup2; + Q&sup2; + 2PQ cos&theta;)<br>যেখানে, P এবং Q হলো ভেক্টরদ্বয়ের মান, R হলো লব্ধির মান, এবং &theta; হলো ভেক্টরদ্বয়ের মধ্যবর্তী কোণ।</p><p>প্রশ্নে দেওয়া আছে:<br>P = Q (দুটি সমান ভেক্টর)<br>R = 0 (শূন্য ভেক্টর পেতে হলে)<br><br>সুতরাং, 0 = &radic;(P&sup2; + P&sup2; + 2P &times; P cos&theta;)<br>0 = &radic;(2P&sup2; + 2P&sup2; cos&theta;)<br><br>উভয় পক্ষকে বর্গ করে পাই:<br>0 = 2P&sup2; + 2P&sup2; cos&theta;<br>0 = 2P&sup2;(1 + cos&theta;)<br><br>যেহেতু P একটি অশূন্য ভেক্টর (মান শূন্য নয়), তাই 2P&sup2; &ne; 0। অতএব,<br>1 + cos&theta; = 0<br>cos&theta; = -1<br><br>যেহেতু cos&theta; = -1, তাই &theta; = 180&deg;।</p><p>অর্থাৎ, দুটি সমান ভেক্টরকে শূন্য লব্ধি পেতে হলে তাদের মধ্যবর্তী কোণ অবশ্যই 180&deg; হতে হবে, অর্থাৎ তারা পরস্পর বিপরীত দিকে ক্রিয়াশীল হতে হবে।</p><ul><li>A) 0&deg;: তখন লব্ধি 2P হবে।</li><li>B) 45&deg;: তখন লব্ধি ভিন্ন হবে।</li><li>C) 90&deg;: তখন লব্ধি P&radic;2 হবে।</li><li>D) 180&deg;: এটি সঠিক।</li></ul>",
+        },
+        {
+          id: 5,
+          question:
+            "দুটি ভেক্টরের লব্ধির মান সর্বোচ্চ হবে যখন এদের মধ্যবর্তী কোণ&mdash;",
+          options: {
+            A: "0&deg;",
+            B: "45&deg;",
+            C: "90&deg;",
+            D: "180&deg;",
+          },
+          correct: "A",
+          explanation:
+            "<p>দুটি ভেক্টরের লব্ধির মান নির্ণয়ের সূত্র হলো:<br>R = &radic;(P&sup2; + Q&sup2; + 2PQ cos&theta;)<br><br>লব্ধির মান সর্বোচ্চ হওয়ার জন্য cos&theta; এর মান সর্বোচ্চ হতে হবে, যা +1।<br>cos&theta; এর মান +1 হয় যখন &theta; = 0&deg;।<br><br>যখন &theta; = 0&deg;, তখন ভেক্টর দুটি একই দিকে ক্রিয়া করে।<br>R<sub>max</sub> = &radic;(P&sup2; + Q&sup2; + 2PQ &times; 1)<br>R<sub>max</sub> = &radic;((P + Q)&sup2;)<br>R<sub>max</sub> = P + Q<br><br>অর্থাৎ, ভেক্টরদ্বয়ের মধ্যবর্তী কোণ 0&deg; হলে তাদের লব্ধির মান সর্বোচ্চ হবে, যা তাদের মানের সরাসরি যোগফলের সমান।</p><ul><li>A) 0&deg;: এটি সঠিক।</li><li>B) 45&deg;: তখন লব্ধির মান কম হবে।</li><li>C) 90&deg;: তখন লব্ধির মান &radic;(P&sup2; + Q&sup2;) হবে।</li><li>D) 180&deg;: তখন লব্ধির মান সর্বনিম্ন হবে (P - Q)।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "&Aring; ও &Aring; এর বিপরীত ভেক্টরের লব্ধির মান&mdash;",
+          options: {
+            A: "0",
+            B: "1",
+            C: "A",
+            D: "2A",
+          },
+          correct: "A",
+          explanation:
+            "<p>একটি ভেক্টর (&Aring;) এবং তার বিপরীত ভেক্টর (Negative vector) হলো এমন একটি ভেক্টর যার মান মূল ভেক্টরটির মানের সমান কিন্তু দিক সম্পূর্ণ বিপরীত। &Aring; এর বিপরীত ভেক্টরকে সাধারণত -&Aring; দ্বারা প্রকাশ করা হয়।</p><p>যখন একটি ভেক্টর এবং তার বিপরীত ভেক্টরকে যোগ করা হয়, তখন তাদের লব্ধি শূন্য ভেক্টর হয়। কারণ তাদের মান সমান এবং দিক বিপরীত, ফলে তারা একে অপরকে বাতিল করে দেয়।</p><p>লব্ধি = &Aring; + (-&Aring;)<br>লব্ধি = &Aring; - &Aring;<br>লব্ধি = 0</p><p>এখানে 0 দ্বারা শূন্য ভেক্টরকে বোঝানো হয়েছে, যার মান শূন্য।</p><ul><li>A) 0: এটি সঠিক।</li><li>B) 1: এটি ভুল।</li><li>C) A: এটি ভুল।</li><li>D) 2A: এটি ভুল।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "একটি ভেক্টরকে সর্বোচ্চ কয়টি উপাংশে ভাগ করা যায়?",
+          options: {
+            A: "দুটি",
+            B: "তিনটি",
+            C: "ছয়টি",
+            D: "অসংখ্য",
+          },
+          correct: "D",
+          explanation:
+            "<p>একটি ভেক্টরকে অসংখ্য উপাংশে (Components) ভাগ করা যায়। যদিও সাধারণত আমরা একটি ভেক্টরকে দুই বা তিনটি পরস্পর লম্ব উপাংশে বিভক্ত করি (যেমন x, y, z অক্ষ বরাবর), তাত্ত্বিকভাবে একটি ভেক্টরকে যেকোনো সংখ্যক দিকে বিশ্লেষণ করা সম্ভব।</p><p>উদাহরণস্বরূপ, একটি ভেক্টরকে যেকোনো দুটি ভিন্ন দিকে (যা সমান্তরাল নয়) অসংখ্য উপায়ে বিশ্লেষণ করা যায়। তেমনি, ত্রিমাত্রিক ক্ষেত্রেও অসংখ্য উপায়ে এটিকে বিভিন্ন উপাংশে ভাগ করা সম্ভব। আমরা শুধুমাত্র হিসাবের সুবিধার্থে পরস্পর লম্ব উপাংশ ব্যবহার করি।</p><ul><li>A) দুটি: এটি একটি বিশেষ ক্ষেত্র (যেমন, দ্বিমাত্রিক তলে)।</li><li>B) তিনটি: এটিও একটি বিশেষ ক্ষেত্র (যেমন, ত্রিমাত্রিক তলে)।</li><li>C) ছয়টি: এটি ভুল।</li><li>D) অসংখ্য: এটি সঠিক। একটি ভেক্টরকে অসংখ্য উপাংশে ভাগ করা যায়।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "দুটি ভেক্টর একই দিকে ক্রিয়া করলে লব্ধির মান হবে&mdash;",
+          options: {
+            A: "সর্বাধিক",
+            B: "সর্বনিম্ন",
+            C: "শূন্য",
+            D: "কোনোটিই নয়",
+          },
+          correct: "A",
+          explanation:
+            "<p>দুটি ভেক্টরের লব্ধির মান নির্ণয়ের সূত্র হলো:<br>R = &radic;(P&sup2; + Q&sup2; + 2PQ cos&theta;)<br><br>যখন দুটি ভেক্টর একই দিকে ক্রিয়া করে, তখন তাদের মধ্যবর্তী কোণ &theta; = 0&deg; হয়।<br>cos(0&deg;) = 1<br><br>এই অবস্থায় লব্ধির মান হয়:<br>R = &radic;(P&sup2; + Q&sup2; + 2PQ &times; 1)<br>R = &radic;((P + Q)&sup2;)<br>R = P + Q<br><br>এটিই দুটি ভেক্টরের লব্ধির সর্বোচ্চ মান। যখন ভেক্টর দুটি একই দিকে থাকে, তখন তাদের মান সরাসরি যোগ হয়ে সর্বোচ্চ লব্ধি উৎপন্ন করে।</p><ul><li>A) সর্বাধিক: এটি সঠিক।</li><li>B) সর্বনিম্ন: এটি ঘটে যখন ভেক্টর দুটি বিপরীত দিকে ক্রিয়া করে (মধ্যবর্তী কোণ 180&deg;)।</li><li>C) শূন্য: এটি ঘটে যখন ভেক্টর দুটি সমান মান এবং বিপরীত দিক বিশিষ্ট হয়।</li><li>D) কোনোটিই নয়: এটি ভুল।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "A ও B-এর লব্ধির সর্বোচ্চ মান কোনটি?",
+          options: {
+            A: "A &times; B",
+            B: "A - B",
+            C: "A + B",
+            D: "|A| + |B|",
+          },
+          correct: "D",
+          explanation:
+            "<p>দুটি ভেক্টরের লব্ধির মান নির্ণয়ের সূত্র হলো:<br>R = &radic;(P&sup2; + Q&sup2; + 2PQ cos&theta;)<br><br>লব্ধির মান সর্বোচ্চ হওয়ার জন্য cos&theta; এর মান সর্বোচ্চ হতে হবে, যা +1।<br>cos&theta; এর মান +1 হয় যখন &theta; = 0&deg;। এই অবস্থায় ভেক্টর দুটি একই দিকে ক্রিয়া করে।<br><br>তাহলে লব্ধির সর্বোচ্চ মান হবে:<br>R<sub>max</sub> = &radic;(|A|&sup2; + |B|&sup2; + 2|A||B| cos(0&deg;))<br>R<sub>max</sub> = &radic;(|A|&sup2; + |B|&sup2; + 2|A||B|)<br>R<sub>max</sub> = &radic;((|A| + |B|)&sup2;)<br>R<sub>max</sub> = |A| + |B|<br><br>এখানে |A| ও |B| দ্বারা যথাক্রমে ভেক্টর A ও B এর মান বোঝানো হয়েছে।</p><ul><li>A) A &times; B: এটি ভেক্টর গুণফল (ক্রস প্রোডাক্ট), যা একটি নতুন ভেক্টর রাশি এবং এর মান লব্ধির সর্বোচ্চ মান নির্দেশ করে না।</li><li>B) A - B: এটি ভেক্টর বিয়োগফল, যা সর্বনিম্ন মান হতে পারে যদি A ও B বিপরীত দিকে থাকে।</li><li>C) A + B: এটি ভেক্টর যোগফল। তবে, এখানে A এবং B ভেক্টর হিসেবে লেখা হয়েছে, এদের মান হিসেবে নয়। লব্ধির সর্বোচ্চ মান নির্ণয়ের জন্য তাদের মান সরাসরি যোগ করতে হয়।</li><li>D) |A| + |B|: এটি সঠিক। ভেক্টর A এবং B এর মানের যোগফল তাদের লব্ধির সর্বোচ্চ মান নির্দেশ করে যখন তারা একই দিকে ক্রিয়া করে।</li></ul>",
+        },
+        {
+          id: 10,
+          question:
+            "|&Aring;&times;B|&sup2; + |&Aring;&sdot;B|&sup2; এর মান&mdash;",
+          options: {
+            A: "|&Aring;|&sup2; + |B|&sup2;",
+            B: "|&Aring;|&sup2;&sdot;|B|&sup2;",
+            C: "|&Aring;+B|&sup2;",
+            D: "|&Aring;&minus;B|&sup2;",
+          },
+          correct: "B",
+          explanation:
+            "<p>ভেক্টর A এবং B এর ক্রস গুণফল ও ডট গুণফলের মান সম্পর্কিত একটি গুরুত্বপূর্ণ অভেদ এটি।</p><p>আমরা জানি:</p><ul><li>ভেক্টর A ও B এর ক্রস গুণফলের মান: |&Aring;&times;B| = |&Aring;||B|sin&theta;</li><li>ভেক্টর A ও B এর ডট গুণফলের মান: |&Aring;&sdot;B| = |&Aring;||B|cos&theta;</li></ul><p>এখন, প্রশ্ন অনুযায়ী রাশিমালাটি হলো: |&Aring;&times;B|&sup2; + |&Aring;&sdot;B|&sup2;</p><p>মানগুলো বসিয়ে পাই:<br>= (|&Aring;||B|sin&theta;)&sup2; + (|&Aring;||B|cos&theta;)&sup2;<br>= |&Aring;|&sup2;|B|&sup2;sin&sup2;&theta; + |&Aring;|&sup2;|B|&sup2;cos&sup2;&theta;<br><br>এখন |&Aring;|&sup2;|B|&sup2; কমন নিলে পাই:<br>= |&Aring;|&sup2;|B|&sup2;(sin&sup2;&theta; + cos&sup2;&theta;)<br><br>আমরা জানি, sin&sup2;&theta; + cos&sup2;&theta; = 1<br><br>সুতরাং, রাশিমালাটির মান হবে:<br>= |&Aring;|&sup2;|B|&sup2; &times; 1<br>= |&Aring;|&sup2;|B|&sup2;</p><ul><li>A) |&Aring;|&sup2; + |B|&sup2;: এটি ভুল।</li><li>B) |&Aring;|&sup2;&sdot;|B|&sup2;: এটি সঠিক।</li><li>C) |&Aring;+B|&sup2;: এটি |&Aring;|&sup2; + |B|&sup2; + 2|&Aring;||B|cos&theta; এর সমান।</li><li>D) |&Aring;&minus;B|&sup2;: এটি |&Aring;|&sup2; + |B|&sup2; - 2|&Aring;||B|cos&theta; এর সমান।</li></ul>",
+        },
+        {
+          id: 11,
+          question:
+            "একক মান সম্পন্ন ভেক্টর Ā, X অক্ষের ধনাত্মক দিকের সাথে 45&deg; কোণ উৎপন্ন করে তাহলে A এর x ও y উপাংশের জন্য&mdash;",
+          options: {
+            A: "A<sub>x</sub> = A<sub>y</sub> = 1",
+            B: "A<sub>x</sub> = A<sub>y</sub> = 1/2",
+            C: "A<sub>x</sub> = A<sub>y</sub> = 1/&radic;2",
+            D: "A<sub>x</sub> = A<sub>y</sub> = &radic;2",
+          },
+          correct: "C",
+          explanation:
+            "<p>যদি একটি ভেক্টর A, X অক্ষের ধনাত্মক দিকের সাথে &theta; কোণ উৎপন্ন করে, এবং এর মান |A| হয়, তাহলে এর x ও y উপাংশগুলো হবে:</p><ul><li>x-উপাংশ (A<sub>x</sub>) = |A|cos&theta;</li><li>y-উপাংশ (A<sub>y</sub>) = |A|sin&theta;</li></ul><p>প্রশ্নে দেওয়া আছে:<br>একক মান সম্পন্ন ভেক্টর A, সুতরাং |A| = 1<br>কোণ &theta; = 45&deg;</p><p>এখন মানগুলো বসিয়ে পাই:<br>A<sub>x</sub> = 1 &times; cos(45&deg;)<br>A<sub>y</sub> = 1 &times; sin(45&deg;)<br><br>আমরা জানি, cos(45&deg;) = 1/&radic;2 এবং sin(45&deg;) = 1/&radic;2<br><br>সুতরাং,<br>A<sub>x</sub> = 1 &times; (1/&radic;2) = 1/&radic;2<br>A<sub>y</sub> = 1 &times; (1/&radic;2) = 1/&radic;2<br><br>অতএব, A এর x ও y উপাংশ উভয়ই 1/&radic;2 হবে।</p><ul><li>A) A<sub>x</sub> = A<sub>y</sub> = 1: এটি ভুল।</li><li>B) A<sub>x</sub> = A<sub>y</sub> = 1/2: এটি ভুল।</li><li>C) A<sub>x</sub> = A<sub>y</sub> = 1/&radic;2: এটি সঠিক।</li><li>D) A<sub>x</sub> = A<sub>y</sub> = &radic;2: এটি ভুল।</li></ul>",
+        },
+        {
+          id: 12,
+          question:
+            "একটি লন রোলারকে অনুভূমিকের সাথে &theta; কোণে F বলে টানা হলে আনুভূমিক বলের উপাংশের মান কত?",
+          options: {
+            A: "F tan&theta;",
+            B: "F sin&theta;",
+            C: "F cos&theta;",
+            D: "F cot&theta;",
+          },
+          correct: "C",
+          explanation:
+            "<p>যখন একটি বল (F) অনুভূমিকের সাথে &theta; কোণে ক্রিয়া করে, তখন বলটিকে দুটি লম্ব উপাংশে বিভক্ত করা যায়:</p><ul><li>অনুভূমিক উপাংশ (Horizontal component)</li><li>উল্লম্ব উপাংশ (Vertical component)</li></ul><p>যে উপাংশটি কোণের সংলগ্ন বাহু বরাবর থাকে, সেটি cos&theta; দিয়ে গুণ হয়, আর যেটি কোণের বিপরীত বাহু বরাবর থাকে, সেটি sin&theta; দিয়ে গুণ হয়।</p><p>এখানে, F বল অনুভূমিকের সাথে &theta; কোণে টানা হচ্ছে। সুতরাং, আনুভূমিক বরাবর বলের উপাংশ হবে F cos&theta;। এই আনুভূমিক উপাংশই রোলারকে সামনে ঠেলে নিতে সাহায্য করে।</p><ul><li>A) F tan&theta;: এটি ভুল।</li><li>B) F sin&theta;: এটি উল্লম্ব উপাংশ।</li><li>C) F cos&theta;: এটি সঠিক। এটি আনুভূমিক উপাংশ।</li><li>D) F cot&theta;: এটি ভুল।</li></ul>",
+        },
+        {
+          id: 13,
+          question:
+            "দুটি ভেক্টরের মান যথাক্রমে ৫ একক ও ৪ একক হলে, এদের লব্ধির কোন মানটি অগ্রহণযোগ্য?",
+          options: {
+            A: "৫ একক",
+            B: "৭ একক",
+            C: "৯ একক",
+            D: "১১ একক",
+          },
+          correct: "D",
+          explanation:
+            "<p>দুটি ভেক্টরের লব্ধির মান একটি নির্দিষ্ট সীমার মধ্যে থাকে। লব্ধির সর্বোচ্চ মান হয় যখন ভেক্টর দুটি একই দিকে ক্রিয়া করে (মধ্যবর্তী কোণ 0&deg;), এবং সর্বনিম্ন মান হয় যখন ভেক্টর দুটি বিপরীত দিকে ক্রিয়া করে (মধ্যবর্তী কোণ 180&deg;)।</p><p>দেওয়া আছে, দুটি ভেক্টরের মান P = ৫ একক এবং Q = ৪ একক।</p><ul><li>লব্ধির সর্বোচ্চ মান (R<sub>max</sub>) = P + Q = ৫ + ৪ = ৯ একক। (যখন &theta; = 0&deg;)</li><li>লব্ধির সর্বনিম্ন মান (R<sub>min</sub>) = |P - Q| = |৫ - ৪| = ১ একক। (যখন &theta; = 180&deg;)</li></ul><p>সুতরাং, এই দুটি ভেক্টরের লব্ধির মান সর্বদা ১ একক এবং ৯ এককের মধ্যে থাকবে (১ &le; R &le; ৯)।</p><p>এখন অপশনগুলো যাচাই করি:</p><ul><li>A) ৫ একক: এটি ১ থেকে ৯ এর মধ্যে, তাই এটি গ্রহণযোগ্য।</li><li>B) ৭ একক: এটি ১ থেকে ৯ এর মধ্যে, তাই এটি গ্রহণযোগ্য।</li><li>C) ৯ একক: এটি লব্ধির সর্বোচ্চ মান, তাই এটি গ্রহণযোগ্য।</li><li>D) ১১ একক: এটি ৯ এককের চেয়ে বেশি, তাই এটি অগ্রহণযোগ্য।</li></ul>",
+        },
+        {
+          id: 14,
+          question:
+            "দুই বা ততোধিক ভেক্টর যোগ করলে যে একটি নতুন ভেক্টর পাওয়া যায় তাকে কী বলে?",
+          options: {
+            A: "ক্ষেত্রফল",
+            B: "উপাংশ",
+            C: "লব্ধি",
+            D: "লম্ব অভিক্ষেপ",
+          },
+          correct: "C",
+          explanation:
+            "<p>দুই বা ততোধিক ভেক্টরকে যোগ করলে তাদের সম্মিলিত প্রভাব প্রকাশ করে যে একটি একক ভেক্টর পাওয়া যায়, তাকে **লব্ধি** (Resultant vector) বলে। এই লব্ধি ভেক্টরটি মূল ভেক্টরগুলোর যোগফলের সমান হয় এবং তাদের সম্মিলিত দিক ও মান নির্দেশ করে।</p><ul><li>A) ক্ষেত্রফল (Area): এটি একটি ভেক্টর রাশি হতে পারে (তবে স্কেলারও হতে পারে), তবে এটি ভেক্টর যোগফলের ফল নয়।</li><li>B) উপাংশ (Component): একটি ভেক্টরকে বিভিন্ন দিকে বিভক্ত করলে প্রাপ্ত অংশগুলোকে উপাংশ বলে। এটি যোগফলের ফল নয়।</li><li>C) লব্ধি (Resultant): এটি সঠিক। এটি দুই বা ততোধিক ভেক্টরের যোগফল।</li><li>D) লম্ব অভিক্ষেপ (Perpendicular projection): একটি ভেক্টরের অন্য একটি ভেক্টরের উপর ছায়া বা উপাংশকে লম্ব অভিক্ষেপ বলে। এটি ভেক্টর যোগফলের ফল নয়।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                <label class="option" data-option="${option}">
+                                  <div class="circle">${option}</div>
+                                  <span class="option-text">${question.options[option]}</span>
+                                </label>
+                              `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                   <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                   <div class="explanation-content">
+                                     <div class="explanation-label">ব্যাখ্যা:</div>
+                                     ${question.explanation}
+                                   </div>
+                                 </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                              <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                              <div class="options">
+                                ${optionsHTML}
+                              </div>
+                              ${explanationHTML}
+                            `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
